@@ -632,12 +632,10 @@ body {
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     <div class="progress-label" id="progressLabel">0%</div>
   </div>
-  <div class="rx-actions">
-    <button class="btn btn-primary" onclick="revealAll()" style="font-size:13px;padding:10px 28px">전체 공개</button>
-  </div>
 
-  <div id="revealActions">
-    <div class="reveal-msg">✦ 공개 완료! 작품을 저장하거나 크게 보세요</div>
+
+  <div id="revealActions" style="display:flex">
+    <div class="reveal-msg" id="revealMsg" style="display:none">✦ 공개 완료! 작품을 저장하거나 크게 보세요</div>
     <div class="btn-row-rx">
       <button class="btn btn-primary" onclick="openLightbox()">🔍 크게 보기</button>
       <button class="btn btn-secondary" onclick="saveImage()">💾 이미지 저장</button>
@@ -938,7 +936,7 @@ function revealAll(){
     document.getElementById('scratchCanvas').style.display='none';
     document.getElementById('scratchWrap').style.display='none';
     /* 완성 후 저장/보기 버튼 표시 */
-    document.getElementById('revealActions').style.display='flex';
+    document.getElementById('revealMsg').style.display='block';
     document.querySelector('.rx-actions').style.display='none';
   },400);
   const flash=document.createElement('div');
