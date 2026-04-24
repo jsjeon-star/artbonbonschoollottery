@@ -648,12 +648,32 @@ const particles = [];
 let particleCanvas, particleCtx, particleAnimId;
 
 function route() {
+  const WORKER_URL = 'https://artbonbon-api.jsjeon-6d5.workers.dev';
   const hash = location.hash;
-  if (hash && hash.startsWith('#rx=')) {
-    /* 수신자 모드: hash에서 이미지 데이터 복원 */
+
+  if (hash && hash.startsWith('#id=')) {
+    /* 수신자 모드: Worker에서 이미지 로드 */
+    const id = hash.slice(4);
+    const imgUrl = `${WORKER_URL}/img/${id}`;
+    const el = new Image();
+    el.crossOrigin = 'anonymous';
+    el.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = el.width; cv.height = el.height;
+      cv.getContext('2d').drawImage(el, 0, 0);
+      imgDataUrl = cv.toDataURL('image/jpeg', 0.9);
+      activateReceiver();
+    };
+    el.onerror = () => {
+      /* CORS fallback: src 직접 사용 */
+      imgDataUrl = imgUrl;
+      activateReceiver();
+    };
+    el.src = imgUrl;
+  } else if (hash && hash.startsWith('#rx=')) {
+    /* 구버전 호환 */
     try {
-      const encoded = hash.slice(4);
-      imgDataUrl = decodeURIComponent(encoded);
+      imgDataUrl = decodeURIComponent(hash.slice(4));
       activateReceiver();
     } catch(e) { showCover(); }
   } else {
@@ -714,26 +734,40 @@ async function generateLink() {
   if (!imgDataUrl) { showToast('이미지를 먼저 업로드하세요'); return; }
   showToast('링크 생성 중...');
 
-  /* 이미지를 canvas로 축소 후 base64 → URL hash에 인코딩 */
-  const MAX = 900; // 최대 너비/높이 px
+  // ↓ Cloudflare Worker 배포 후 실제 URL로 교체
+  const WORKER_URL = 'https://artbonbon-api.jsjeon-6d5.workers.dev';
+
+  /* 이미지 압축 */
+  const MAX = 800;
   const img = new Image();
-  img.onload = () => {
+  img.onload = async () => {
     let cw = img.width, ch = img.height;
-    if (cw > MAX || ch > MAX) {
-      const s = Math.min(MAX/cw, MAX/ch);
-      cw = Math.round(cw*s); ch = Math.round(ch*s);
-    }
+    const s = Math.min(MAX/cw, MAX/ch, 1);
+    cw = Math.round(cw*s); ch = Math.round(ch*s);
     const cv = document.createElement('canvas');
     cv.width = cw; cv.height = ch;
     cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
-    const compressed = cv.toDataURL('image/jpeg', 0.72);
-    const encoded = encodeURIComponent(compressed);
-    const url = location.origin + location.pathname + '#rx=' + encoded;
-    document.getElementById('shareUrl').textContent = url;
-    const box = document.getElementById('shareBox');
-    box.style.display = 'block';
-    setTimeout(() => box.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
-    showToast('링크가 생성되었습니다');
+    const compressed = cv.toDataURL('image/jpeg', 0.7);
+
+    try {
+      const res = await fetch(`${WORKER_URL}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: compressed })
+      });
+      const json = await res.json();
+      if (!json.id) throw new Error('ID 없음');
+
+      const url = location.origin + location.pathname + '#id=' + json.id;
+      document.getElementById('shareUrl').textContent = url;
+      const box = document.getElementById('shareBox');
+      box.style.display = 'block';
+      setTimeout(() => box.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
+      showToast('링크 생성 완료! ✓');
+    } catch(e) {
+      showToast('업로드 실패 — 네트워크를 확인하세요');
+      console.error(e);
+    }
   };
   img.src = imgDataUrl;
 }
