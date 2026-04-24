@@ -449,7 +449,7 @@ body {
   -webkit-overflow-scrolling:touch;
   box-sizing:border-box;
 }
-.rx-hd { text-align:center; }
+.rx-hd { text-align:center; position:relative; width:100%; max-width:400px; padding-top:8px; }
 .rx-eyebrow {
   font-size:10px; font-weight:700; letter-spacing:.2em;
   color:var(--stamp); text-transform:uppercase; margin-bottom:5px;
@@ -633,6 +633,16 @@ body {
 <!-- ═══ RECEIVER ═══ -->
 <div id="view-receiver" class="view">
   <div class="rx-hd">
+    <button id="rxBackBtn" onclick="showCreator()" style="
+      display:none;
+      position:absolute; left:16px; top:16px;
+      font-family:'Noto Sans KR',sans-serif;
+      font-size:13px; font-weight:700;
+      background:rgba(61,43,26,0.08);
+      border:1.5px solid rgba(61,43,26,0.2);
+      border-radius:8px; color:var(--ink2);
+      padding:7px 13px; cursor:pointer;
+    ">← 뒤로</button>
     <div class="rx-eyebrow">아트봉봉스쿨 디지털 행운 액자</div>
     <div class="rx-title">긁어서 확인해 보세요 🎉</div>
     <div class="rx-hint" id="rxHint">글자 부분을 손가락으로 살살 긁어보세요</div>
@@ -712,6 +722,7 @@ function route() {
     try {
       imgDataUrl = decodeURIComponent(hash.slice(4));
       activateReceiver();
+      document.getElementById('rxBackBtn').style.display = 'none';
     } catch(e) { showCover(); }
   } else {
     showCover();
@@ -766,6 +777,7 @@ function readFile(file) {
 function goPreview() {
   if (!imgDataUrl) { showToast('이미지를 먼저 업로드하세요'); return; }
   activateReceiver();
+  document.getElementById('rxBackBtn').style.display = 'block';
 }
 async function generateLink() {
   if (!imgDataUrl) { showToast('이미지를 먼저 업로드하세요'); return; }
