@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>디지털 복권 액자 | 아트봉봉스쿨</title>
+<title>디지털 행운 액자 | 아트봉봉스쿨</title>
+<meta property="og:title" content="디지털 행운 액자 | 아트봉봉스쿨">
+<meta property="og:description" content="사랑과 추억을 담아 완성하는 디지털 행운 액자 🎨 긁어서 확인해 보세요!">
+<meta property="og:type" content="website">
+<meta name="description" content="사랑과 추억을 담아 완성하는 디지털 행운 액자 🎨 긁어서 확인해 보세요!">
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -439,8 +443,11 @@ body {
 #view-receiver {
   min-height:100vh;
   background: linear-gradient(160deg, #fdf0dc 0%, #f0e0c4 100%);
-  padding:20px 16px 40px; gap:14px;
+  padding:20px 16px 60px; gap:14px;
   justify-content:flex-start;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  box-sizing:border-box;
 }
 .rx-hd { text-align:center; }
 .rx-eyebrow {
@@ -473,15 +480,19 @@ body {
 
 /* 완성 후 액션 */
 #revealActions {
-  display:none; flex-direction:column; align-items:center; gap:10px;
+  display:none; flex-direction:column; align-items:center; gap:12px;
   width:100%; max-width:400px;
+  padding: 0 4px;
 }
 #revealActions .reveal-msg {
   font-family:"Nanum Pen Script", cursive;
   font-size:18px; color:var(--stamp); text-align:center;
 }
 #revealActions .btn-row-rx { display:flex; gap:10px; width:100%; }
-#revealActions .btn-row-rx .btn { flex:1; font-size:13px; padding:11px 0; }
+#revealActions .btn-row-rx .btn {
+  flex:1; font-size:15px; font-weight:900;
+  padding:15px 0; border-radius:12px;
+}
 
 /* toast */
 .toast {
@@ -602,7 +613,7 @@ body {
 <!-- ═══ RECEIVER ═══ -->
 <div id="view-receiver" class="view">
   <div class="rx-hd">
-    <div class="rx-eyebrow">아트봉봉스쿨 디지털 복권 액자</div>
+    <div class="rx-eyebrow">아트봉봉스쿨 디지털 행운 액자</div>
     <div class="rx-title">긁어서 확인해 보세요 🎉</div>
     <div class="rx-hint" id="rxHint">글자 부분을 손가락으로 살살 긁어보세요</div>
   </div>
@@ -949,11 +960,45 @@ document.getElementById('lightbox').addEventListener('click',function(e){
 });
 function saveImage(){
   if(!imgDataUrl){showToast('이미지가 없습니다');return;}
-  const a=document.createElement('a');
-  a.href=imgDataUrl;
-  a.download='아트봉봉스쿨_복권액자.jpg';
+
+  // imgDataUrl이 외부 URL인 경우 canvas로 변환 후 저장
+  if(!imgDataUrl.startsWith('data:')){
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = img.width; cv.height = img.height;
+      cv.getContext('2d').drawImage(img,0,0);
+      const dataUrl = cv.toDataURL('image/jpeg',0.92);
+      _doSave(dataUrl);
+    };
+    img.onerror = () => {
+      // CORS 실패 시 새 탭으로 열기 (모바일에서 길게 눌러 저장)
+      window.open(imgDataUrl, '_blank');
+      showToast('이미지를 길게 눌러 저장하세요');
+    };
+    img.src = imgDataUrl;
+    return;
+  }
+  _doSave(imgDataUrl);
+}
+
+function _doSave(dataUrl){
+  // iOS Safari 대응
+  if(navigator.userAgent.match(/iphone|ipad|ipod/i)){
+    const w = window.open('', '_blank');
+    w.document.write('<img src="'+dataUrl+'" style="max-width:100%">');
+    w.document.write('<p style="font-size:16px;text-align:center">이미지를 길게 눌러 사진첩에 저장하세요</p>');
+    showToast('열린 페이지에서 이미지 저장하세요');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = '아트봉봉스쿨_행운액자.jpg';
+  document.body.appendChild(a);
   a.click();
-  showToast('이미지 저장 중...');
+  document.body.removeChild(a);
+  showToast('이미지를 저장했습니다 💾');
 }
 
 function showToast(msg){
