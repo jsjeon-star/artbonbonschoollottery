@@ -202,6 +202,12 @@
 const WORKER = 'https://artbonbon-api.jsjeon-6d5.workers.dev';
 let teacher = null;
 
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
 /* ── 코드 포맷: 영문3 + 숫자4 ── */
 function formatCode(input) {
   let val = input.value.toLowerCase().replace(/[^a-z0-9]/g, '');
