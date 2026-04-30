@@ -104,30 +104,50 @@
 <!-- 로그인 -->
 <div id="loginView">
   <div class="login-card">
-    <div style="text-align:center">
+    <div style="text-align:center;margin-bottom:4px">
       <div class="label" style="margin-bottom:8px">TEACHER PORTAL</div>
       <h2 style="font-size:22px;font-weight:900;color:var(--ink)">선생님 관리 페이지</h2>
-      <p style="font-size:13px;color:var(--ink2);margin-top:4px">로그인 코드를 입력하세요</p>
-    </div>
-    <div>
-      <div style="font-size:11px;font-weight:700;color:var(--warm);letter-spacing:.1em;margin-bottom:6px;">로그인 코드</div>
-      <input id="codeInput" type="text" placeholder="예: abc1234" maxlength="7"
-        style="text-transform:lowercase;letter-spacing:.08em;font-size:16px;"
-        oninput="formatCode(this)"
-        onkeydown="if(event.key==='Enter')login()">
-      <div style="font-size:11px;color:var(--ink2);margin-top:5px;">영문 3자 + 숫자 4자 (예: kim2024)</div>
-      <div id="codeStatus" style="font-size:11px;margin-top:4px;min-height:16px;"></div>
-    </div>
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="login()">로그인</button>
-
-    <div style="border-top:1px solid var(--blush);padding-top:14px;display:flex;flex-direction:column;gap:8px">
-      <p style="font-size:12px;color:var(--ink2);text-align:center">처음 사용하시나요?</p>
-      <input id="nameInput" type="text" placeholder="선생님 이름 (예: 김선생님)">
-      <div style="font-size:11px;color:var(--ink2);">위의 코드 입력란에 사용할 코드를 입력하고 이름을 작성하세요</div>
-      <button class="btn btn-secondary" style="width:100%;padding:12px" onclick="register()">새 코드로 등록하기</button>
     </div>
 
-    <a href="index.html" class="btn btn-secondary" style="text-align:center;text-decoration:none;padding:10px;font-size:13px">← 학생 페이지로</a>
+    <!-- 탭 -->
+    <div style="display:flex;border-radius:10px;overflow:hidden;border:2px solid var(--blush);">
+      <button id="tabLogin" onclick="switchTab('login')" style="flex:1;padding:10px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;background:var(--ink);color:var(--cream);">로그인</button>
+      <button id="tabRegister" onclick="switchTab('register')" style="flex:1;padding:10px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;border:none;cursor:pointer;background:#fff;color:var(--ink2);">신규 등록</button>
+    </div>
+
+    <!-- 로그인 폼 -->
+    <div id="formLogin" style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <div class="label" style="margin-bottom:5px;">로그인 코드</div>
+        <input id="loginCode" type="text" placeholder="예: kim2024" maxlength="7"
+          style="letter-spacing:.08em;font-size:16px;"
+          oninput="formatCodeInput(this, 'loginStatus')"
+          onkeydown="if(event.key==='Enter')login()">
+        <div style="font-size:11px;color:var(--ink2);margin-top:4px;">영문 3자 + 숫자 4자</div>
+        <div id="loginStatus" style="font-size:11px;margin-top:3px;min-height:15px;"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="login()">로그인 →</button>
+    </div>
+
+    <!-- 등록 폼 -->
+    <div id="formRegister" style="display:none;flex-direction:column;gap:12px;">
+      <div>
+        <div class="label" style="margin-bottom:5px;">사용할 코드 만들기</div>
+        <input id="regCode" type="text" placeholder="예: kim2024" maxlength="7"
+          style="letter-spacing:.08em;font-size:16px;"
+          oninput="formatCodeInput(this, 'regStatus')">
+        <div style="font-size:11px;color:var(--ink2);margin-top:4px;">영문 3자 + 숫자 4자 (예: kim2024)</div>
+        <div id="regStatus" style="font-size:11px;margin-top:3px;min-height:15px;"></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:5px;">선생님 이름</div>
+        <input id="regName" type="text" placeholder="예: 김선생님"
+          onkeydown="if(event.key==='Enter')register()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="register()">등록하기 →</button>
+    </div>
+
+    <a href="index.html" class="btn btn-secondary" style="text-align:center;text-decoration:none;padding:10px;font-size:13px;">← 학생 페이지로</a>
   </div>
 </div>
 
@@ -204,13 +224,48 @@ function formatCode(input) {
   }
 }
 
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2400);
+/* ── 탭 전환 ── */
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('formLogin').style.display = isLogin ? 'flex' : 'none';
+  document.getElementById('formRegister').style.display = isLogin ? 'none' : 'flex';
+  document.getElementById('tabLogin').style.background = isLogin ? 'var(--ink)' : '#fff';
+  document.getElementById('tabLogin').style.color = isLogin ? 'var(--cream)' : 'var(--ink2)';
+  document.getElementById('tabRegister').style.background = isLogin ? '#fff' : 'var(--ink)';
+  document.getElementById('tabRegister').style.color = isLogin ? 'var(--ink2)' : 'var(--cream)';
 }
 
 /* ── 코드 포맷: 영문3 + 숫자4 ── */
+function formatCodeInput(input, statusId) {
+  let val = input.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const letters = val.replace(/[^a-z]/g, '').slice(0, 3);
+  const numbers = val.replace(/[^0-9]/g, '').slice(0, 4);
+  input.value = letters + numbers;
+  const status = document.getElementById(statusId);
+  const isValid = /^[a-z]{3}[0-9]{4}$/.test(input.value);
+  if (!input.value) {
+    status.textContent = '';
+  } else if (isValid) {
+    status.textContent = '✓ 올바른 형식';
+    status.style.color = '#7a9e6e';
+  } else {
+    const lc = (input.value.match(/^[a-z]*/)[0] || '').length;
+    const nc = (input.value.match(/[0-9]*$/)[0] || '').length;
+    status.textContent = `영문 ${lc}/3, 숫자 ${nc}/4`;
+    status.style.color = 'var(--stamp)';
+  }
+}
+
+// 구버전 호환
+function formatCode(input) { formatCodeInput(input, 'loginStatus'); }
+
+function validateCode(code) {
+  if (!/^[a-z]{3}[0-9]{4}$/.test(code)) {
+    toast('코드 형식: 영문 3자 + 숫자 4자 (예: kim2024)');
+    return false;
+  }
+  return true;
+}
 
 function validateCode(code) {
   if (!/^[a-z]{3}[0-9]{4}$/.test(code)) {
@@ -222,7 +277,7 @@ function validateCode(code) {
 
 /* ── 로그인 ── */
 async function login() {
-  const code = document.getElementById('codeInput').value.trim();
+  const code = document.getElementById('loginCode').value.trim();
   if (!validateCode(code)) return;
   toast('로그인 중...');
   try {
@@ -239,8 +294,8 @@ async function login() {
 
 /* ── 등록 ── */
 async function register() {
-  const code = document.getElementById('codeInput').value.trim();
-  const name = document.getElementById('nameInput').value.trim();
+  const code = document.getElementById('regCode').value.trim();
+  const name = document.getElementById('regName').value.trim();
   if (!validateCode(code)) return;
   if (!name) { toast('선생님 이름을 입력하세요'); return; }
   toast('등록 중...');
@@ -251,7 +306,7 @@ async function register() {
     });
     const data = await res.json();
     console.log('register response:', res.status, data);
-    if (!res.ok) { toast(data.error || '등록 실패 (코드: ' + res.status + ')'); return; }
+    if (!res.ok) { toast(data.error || '등록 실패 (' + res.status + ')'); return; }
     teacher = { code, name };
     toast(`${name} 선생님 등록 완료!`);
     enterDash();
@@ -286,8 +341,10 @@ function logout() {
   teacher = null;
   document.getElementById('loginView').style.display = 'flex';
   document.getElementById('dashView').style.display = 'none';
-  document.getElementById('codeInput').value = '';
-  document.getElementById('nameInput').value = '';
+  document.getElementById('loginCode').value = '';
+  document.getElementById('regCode').value = '';
+  document.getElementById('regName').value = '';
+  switchTab('login');
 }
 
 /* ── 학생 목록 ── */
