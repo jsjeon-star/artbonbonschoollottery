@@ -212,6 +212,14 @@ function toast(msg) {
 
 /* ── 코드 포맷: 영문3 + 숫자4 ── */
 
+function validateCode(code) {
+  if (!/^[a-z]{3}[0-9]{4}$/.test(code)) {
+    toast('코드 형식: 영문 3자 + 숫자 4자 (예: kim2024)');
+    return false;
+  }
+  return true;
+}
+
 /* ── 로그인 ── */
 async function login() {
   const code = document.getElementById('codeInput').value.trim();
