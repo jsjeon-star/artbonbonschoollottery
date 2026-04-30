@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>선생님 관리 페이지 | 아트봉봉스쿨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --kraft: #e8d5b7; --warm: #c17f3e; --peach: #e8856a;
+      --blush: #f2c4a8; --ink: #3d2b1a; --ink2: #6b4a30;
+      --cream: #fdf6eb; --stamp: #b85c38;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(160deg, #fdf0dc 0%, #f5e4c8 100%);
+      min-height: 100vh;
+    }
+    .btn {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px; font-weight: 700;
+      padding: 11px 24px; border-radius: 8px;
+      cursor: pointer; border: none; transition: all .15s;
+    }
+    .btn-primary { background: var(--ink); color: var(--cream); box-shadow: 2px 3px 0 rgba(0,0,0,0.2); }
+    .btn-primary:hover { transform: translateY(-1px); }
+    .btn-secondary { background: transparent; border: 2px solid var(--ink); color: var(--ink); }
+    .btn-secondary:hover { background: rgba(61,43,26,0.06); }
+    .btn-danger { background: transparent; border: 2px solid var(--stamp); color: var(--stamp); }
+    input {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 15px; padding: 13px 16px;
+      border: 2px solid var(--blush); border-radius: 10px;
+      background: #fff; color: var(--ink); outline: none;
+      transition: border-color .2s; width: 100%;
+    }
+    input:focus { border-color: var(--warm); }
+    .card {
+      background: #fdf8f0; border-radius: 16px;
+      border: 1.5px solid var(--blush);
+      padding: 28px; box-shadow: 2px 3px 0 rgba(193,127,62,0.1);
+    }
+    .label {
+      font-size: 10px; font-weight: 700; color: var(--warm);
+      letter-spacing: .2em; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(14px);
+      background: var(--ink); color: var(--cream);
+      font-size: 13px; font-weight: 700;
+      padding: 10px 22px; border-radius: 8px;
+      opacity: 0; pointer-events: none;
+      transition: all .3s; z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* 로그인 화면 */
+    #loginView {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .login-card {
+      background: #fdf8f0; border-radius: 16px;
+      border: 1.5px solid var(--blush); padding: 40px 36px;
+      width: 100%; max-width: 420px;
+      box-shadow: 4px 5px 20px rgba(61,43,26,0.15);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* 대시보드 */
+    #dashView { display: none; padding: 32px 24px 60px; max-width: 900px; margin: 0 auto; }
+    .dash-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px; margin-top: 16px;
+    }
+    .student-card {
+      background: #fff; border-radius: 12px;
+      border: 1.5px solid var(--blush); padding: 16px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      position: relative;
+    }
+    .student-card .del-btn {
+      position: absolute; top: 6px; right: 8px;
+      font-size: 13px; background: none; border: none;
+      color: rgba(184,92,56,0.4); cursor: pointer; padding: 2px 5px;
+    }
+    .student-card .del-btn:hover { color: var(--stamp); }
+    .student-name { font-size: 13px; font-weight: 700; color: var(--ink); text-align: center; }
+    .student-date { font-size: 10px; color: var(--ink2); }
+    .empty-msg { text-align: center; color: var(--ink2); font-size: 13px; padding: 32px; grid-column: 1/-1; }
+  </style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginView">
+  <div class="login-card">
+    <div style="text-align:center">
+      <div class="label" style="margin-bottom:8px">TEACHER PORTAL</div>
+      <h2 style="font-size:22px;font-weight:900;color:var(--ink)">선생님 관리 페이지</h2>
+      <p style="font-size:13px;color:var(--ink2);margin-top:4px">로그인 코드를 입력하세요</p>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--warm);letter-spacing:.1em;margin-bottom:6px;">로그인 코드</div>
+      <input id="codeInput" type="text" placeholder="예: abc1234" maxlength="7"
+        style="text-transform:lowercase;letter-spacing:.08em;font-size:16px;"
+        oninput="formatCode(this)"
+        onkeydown="if(event.key==='Enter')login()">
+      <div style="font-size:11px;color:var(--ink2);margin-top:5px;">영문 3자 + 숫자 4자 (예: kim2024)</div>
+      <div id="codeStatus" style="font-size:11px;margin-top:4px;min-height:16px;"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="login()">로그인</button>
+
+    <div style="border-top:1px solid var(--blush);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+      <p style="font-size:12px;color:var(--ink2);text-align:center">처음 사용하시나요?</p>
+      <input id="nameInput" type="text" placeholder="선생님 이름 (예: 김선생님)">
+      <div style="font-size:11px;color:var(--ink2);">위의 코드 입력란에 사용할 코드를 입력하고 이름을 작성하세요</div>
+      <button class="btn btn-secondary" style="width:100%;padding:12px" onclick="register()">새 코드로 등록하기</button>
+    </div>
+
+    <a href="index.html" class="btn btn-secondary" style="text-align:center;text-decoration:none;padding:10px;font-size:13px">← 학생 페이지로</a>
+  </div>
+</div>
+
+<!-- 대시보드 -->
+<div id="dashView">
+  <div class="dash-header">
+    <div>
+      <div class="label">TEACHER DASHBOARD</div>
+      <h2 id="welcomeMsg" style="font-size:22px;font-weight:900;color:var(--ink)"></h2>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary" style="font-size:12px;padding:9px 14px" onclick="loadStudents()">🔄 새로고침</button>
+      <button class="btn btn-secondary" style="font-size:12px;padding:9px 14px;color:var(--stamp);border-color:var(--stamp)" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 수업 QR -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="label">수업 입장 QR</div>
+    <p style="font-size:13px;color:var(--ink2);margin-bottom:16px">학생들이 이 QR을 스캔하면 액자 만들기 페이지로 바로 진입합니다.</p>
+    <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+      <div id="classQr" style="background:#fff;padding:10px;border-radius:8px;border:1.5px solid var(--blush);flex-shrink:0"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:180px">
+        <div id="classQrUrl" style="font-size:11px;font-family:monospace;background:rgba(193,127,62,0.08);border-radius:6px;border:1px solid rgba(193,127,62,0.2);padding:8px 10px;color:var(--ink2);word-break:break-all"></div>
+        <button class="btn btn-primary" style="font-size:13px;padding:11px" onclick="downloadClassQR()">⬇ 수업 QR 저장</button>
+        <button class="btn btn-secondary" style="font-size:13px;padding:11px" onclick="printClassQR()">🖨 수업 QR 인쇄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 학생 목록 -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div>
+        <div class="label">학생 목록</div>
+        <span id="studentCount" style="font-size:13px;color:var(--ink2)">0명</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="font-size:12px;padding:10px 14px" onclick="printAllQR()">🖨 전체 QR 인쇄</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:10px 14px" onclick="deleteAll()">🗑 전체 삭제</button>
+      </div>
+    </div>
+    <div id="studentGrid" class="student-grid">
+      <div class="empty-msg">아직 제출한 학생이 없습니다</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WORKER = 'https://artbonbon-api.jsjeon-6d5.workers.dev';
+let teacher = null;
+
+/* ── 코드 포맷: 영문3 + 숫자4 ── */
+function formatCode(input) {
+  let val = input.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const letters = val.replace(/[^a-z]/g, '').slice(0, 3);
+  const numbers = val.replace(/[^0-9]/g, '').slice(0, 4);
+  input.value = letters + numbers;
+
+  const status = document.getElementById('codeStatus');
+  const isValid = /^[a-z]{3}[0-9]{4}$/.test(input.value);
+  if (!input.value) {
+    status.textContent = '';
+  } else if (isValid) {
+    status.textContent = '✓ 올바른 형식입니다';
+    status.style.color = '#7a9e6e';
+  } else {
+    const letterCount = (input.value.match(/^[a-z]*/)[0] || '').length;
+    const numCount = (input.value.match(/[0-9]*$/)[0] || '').length;
+    status.textContent = `영문 ${letterCount}/3자, 숫자 ${numCount}/4자`;
+    status.style.color = 'var(--stamp)';
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ── 코드 포맷: 영문3 + 숫자4 ── */
+
+/* ── 로그인 ── */
+async function login() {
+  const code = document.getElementById('codeInput').value.trim();
+  if (!validateCode(code)) return;
+  toast('로그인 중...');
+  try {
+    const res = await fetch(`${WORKER}/teacher/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || '로그인 실패'); return; }
+    teacher = { code: data.code, name: data.name };
+    enterDash();
+  } catch(e) { toast('서버 연결 실패'); }
+}
+
+/* ── 등록 ── */
+async function register() {
+  const code = document.getElementById('codeInput').value.trim();
+  const name = document.getElementById('nameInput').value.trim();
+  if (!validateCode(code)) return;
+  if (!name) { toast('선생님 이름을 입력하세요'); return; }
+  toast('등록 중...');
+  try {
+    const res = await fetch(`${WORKER}/teacher/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name })
+    });
+    const data = await res.json();
+    console.log('register response:', res.status, data);
+    if (!res.ok) { toast(data.error || '등록 실패 (코드: ' + res.status + ')'); return; }
+    teacher = { code, name };
+    toast(`${name} 선생님 등록 완료!`);
+    enterDash();
+  } catch(e) {
+    console.error('register error:', e);
+    toast('연결 실패: ' + e.message);
+  }
+}
+
+/* ── 대시보드 진입 ── */
+function enterDash() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashView').style.display = 'block';
+  document.getElementById('welcomeMsg').textContent = teacher.name + ' 선생님 안녕하세요 👋';
+
+  // 수업 입장 QR 생성
+  const classUrl = location.origin + location.pathname.replace('teacher.html','') + 'index.html?tc=' + teacher.code;
+  document.getElementById('classQrUrl').textContent = classUrl;
+  const el = document.getElementById('classQr');
+  el.innerHTML = '';
+  new QRCode(el, {
+    text: classUrl, width: 140, height: 140,
+    colorDark: '#3d2b1a', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  loadStudents();
+}
+
+/* ── 로그아웃 ── */
+function logout() {
+  teacher = null;
+  document.getElementById('loginView').style.display = 'flex';
+  document.getElementById('dashView').style.display = 'none';
+  document.getElementById('codeInput').value = '';
+  document.getElementById('nameInput').value = '';
+}
+
+/* ── 학생 목록 ── */
+async function loadStudents() {
+  if (!teacher) return;
+  try {
+    const res = await fetch(`${WORKER}/teacher/${teacher.code}/students`, {
+      headers: { 'Authorization': `Bearer ${teacher.code}` }
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error); return; }
+    renderStudents(data.students || []);
+  } catch(e) { toast('목록 로드 실패'); }
+}
+
+function renderStudents(students) {
+  const grid = document.getElementById('studentGrid');
+  document.getElementById('studentCount').textContent = students.length + '명';
+  if (!students.length) {
+    grid.innerHTML = '<div class="empty-msg">아직 제출한 학생이 없습니다</div>';
+    return;
+  }
+  grid.innerHTML = students.map(s => `
+    <div class="student-card">
+      <button class="del-btn" onclick="deleteStudent('${s.id}')">✕</button>
+      <div id="sq_${s.id}"></div>
+      <div class="student-name">${s.name}</div>
+      <div class="student-date">${new Date(s.createdAt).toLocaleDateString('ko-KR')}</div>
+    </div>
+  `).join('');
+
+  students.forEach(s => {
+    const el = document.getElementById('sq_' + s.id);
+    if (el) new QRCode(el, {
+      text: s.shareUrl, width: 110, height: 110,
+      colorDark: '#3d2b1a', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
+}
+
+/* ── 학생 삭제 ── */
+async function deleteStudent(id) {
+  if (!confirm('이 학생을 삭제할까요?')) return;
+  await fetch(`${WORKER}/teacher/${teacher.code}/student/${id}`, {
+    method: 'DELETE', headers: { 'Authorization': `Bearer ${teacher.code}` }
+  });
+  toast('삭제 완료'); loadStudents();
+}
+
+async function deleteAll() {
+  if (!confirm('모든 학생 데이터를 삭제할까요?')) return;
+  await fetch(`${WORKER}/teacher/${teacher.code}/students`, {
+    method: 'DELETE', headers: { 'Authorization': `Bearer ${teacher.code}` }
+  });
+  toast('전체 삭제 완료'); loadStudents();
+}
+
+/* ── 수업 QR 저장 ── */
+function downloadClassQR() {
+  const canvas = document.querySelector('#classQr canvas');
+  if (!canvas) return;
+  const out = document.createElement('canvas');
+  out.width = 200; out.height = 240;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#fdf8f0'; ctx.fillRect(0,0,200,240);
+  ctx.drawImage(canvas, 30, 14, 140, 140);
+  ctx.fillStyle = '#3d2b1a'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('아트봉봉스쿨 행운 액자', 100, 174);
+  ctx.font = '10px sans-serif'; ctx.fillStyle = '#6b4a30';
+  ctx.fillText('QR을 스캔해서 시작하세요!', 100, 192);
+  const a = document.createElement('a');
+  a.href = out.toDataURL('image/png'); a.download = '수업입장_QR.png'; a.click();
+  toast('QR 저장 완료!');
+}
+
+/* ── 수업 QR 인쇄 ── */
+function printClassQR() {
+  const canvas = document.querySelector('#classQr canvas');
+  if (!canvas) return;
+  openPrint([{ name: '수업 입장 QR', qr: canvas.toDataURL() }], '수업 입장 QR');
+}
+
+/* ── 전체 학생 QR 인쇄 ── */
+async function printAllQR() {
+  const cards = document.querySelectorAll('#studentGrid .student-card');
+  if (!cards.length) { toast('학생이 없습니다'); return; }
+  await new Promise(r => setTimeout(r, 300));
+  const items = [];
+  cards.forEach(card => {
+    const name = card.querySelector('.student-name')?.textContent.trim();
+    const qrCanvas = card.querySelector('canvas');
+    if (name && qrCanvas) items.push({ name, qr: qrCanvas.toDataURL() });
+  });
+  if (!items.length) { toast('QR이 아직 생성되지 않았습니다'); return; }
+  openPrint(items, '학생 QR 전체');
+}
+
+/* ── 인쇄 공통 ── */
+function openPrint(items, title) {
+  const cards = items.map(i => `
+    <div class="qr-card">
+      <img src="${i.qr}" alt="QR">
+      <div class="name">${i.name}</div>
+      <div class="hint">📱 스캔해서 확인하세요</div>
+    </div>`).join('');
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8"><title>${title}</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { font-family:'Noto Sans KR',sans-serif; padding:16px; }
+      h1 { font-size:15px; font-weight:900; color:#3d2b1a; text-align:center; margin-bottom:14px; }
+      .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+      .qr-card { border:1.5px solid #d4a96a; border-radius:10px; padding:14px 10px; text-align:center; background:#fdf8f0; break-inside:avoid; }
+      .qr-card img { width:110px; height:110px; }
+      .name { font-size:13px; font-weight:700; color:#3d2b1a; margin-top:6px; }
+      .hint { font-size:10px; color:#6b4a30; margin-top:3px; }
+      @media print { body { padding:6px; } }
+    </style>
+    </head><body>
+    <h1>🎨 아트봉봉스쿨 디지털 행운 액자 — ${title}</h1>
+    <div class="grid">${cards}</div>
+    <script>window.onload=()=>{ setTimeout(()=>window.print(),400); }<\/script>
+    </body></html>`);
+  w.document.close();
+}
+</script>
+</body>
+</html>
