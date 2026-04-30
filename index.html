@@ -564,6 +564,7 @@ body {
 .upload-placeholder .up-icon { font-size:28px; opacity:.3; }
 .upload-placeholder p { font-size:12px; color:var(--ink2); opacity:.5; pointer-events:none; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -614,7 +615,7 @@ body {
 
     <div class="btn-row" id="actionBtns">
       <button class="btn btn-secondary" onclick="goPreview()">미리보기 / 긁어보기</button>
-      <button class="btn btn-primary" onclick="generateLink()">공유 링크 생성 →</button>
+      <button class="btn btn-primary" onclick="openStudentModal()">공유 QR 생성 →</button>
     </div>
 
     <div id="shareBox" class="share-box" style="display:none">
@@ -623,6 +624,20 @@ body {
       <div class="share-actions">
         <button class="btn btn-primary" style="flex:1;font-size:12px;padding:10px" onclick="copyLink()">링크 복사</button>
         <button class="btn btn-secondary" style="flex:1;font-size:12px;padding:10px" onclick="goPreview()">먼저 긁어보기</button>
+      </div>
+
+      <!-- QR 코드 영역 -->
+      <div id="qrSection" style="margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--warm);letter-spacing:.15em;text-transform:uppercase;">QR 코드</div>
+        <div id="qrCanvas" style="
+          background:#fff; padding:12px; border-radius:8px;
+          box-shadow:2px 3px 0 rgba(193,127,62,0.15);
+          border:1.5px solid var(--blush);
+        "></div>
+        <div style="display:flex;gap:8px;width:100%;">
+          <button class="btn btn-primary" style="flex:1;font-size:12px;padding:10px" onclick="downloadQR()">⬇ QR 저장</button>
+          <button class="btn btn-secondary" style="flex:1;font-size:12px;padding:10px" onclick="printQR()">🖨 인쇄하기</button>
+        </div>
       </div>
     </div>
 
@@ -780,10 +795,13 @@ function goPreview() {
   document.getElementById('rxBackBtn').style.display = 'block';
 }
 async function generateLink() {
+  generateLinkOnly();
+}
+
+async function _generateLink_orig() {
   if (!imgDataUrl) { showToast('이미지를 먼저 업로드하세요'); return; }
   showToast('링크 생성 중...');
 
-  // ↓ Cloudflare Worker 배포 후 실제 URL로 교체
   const WORKER_URL = 'https://artbonbon-api.jsjeon-6d5.workers.dev';
 
   /* 이미지 압축 */
@@ -812,6 +830,7 @@ async function generateLink() {
       const box = document.getElementById('shareBox');
       box.style.display = 'block';
       setTimeout(() => box.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
+      generateQR(url);
       showToast('링크 생성 완료! ✓');
     } catch(e) {
       showToast('업로드 실패 — 네트워크를 확인하세요');
@@ -1074,7 +1093,154 @@ function _triggerDownload(url, filename){
         '<html><body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh">'
         +'<img src="'+url+'" style="max-width:100%;max-height:90vh;object-fit:contain">'
         +'<p style="color:#fff;font-size:15px;padding:16px;text-align:center">📱 이미지를 꾹 눌러 사진 앱에 저장하세요</p>'
-        +'</body></html>'
+        +'
+<!-- ═══ TEACHER LOGIN ═══ -->
+<div id="view-teacher-login" class="view">
+  <div style="
+    width:100%;max-width:420px;
+    background:#fdf8f0;border-radius:16px;
+    padding:40px 36px;margin:auto;
+    box-shadow:4px 5px 20px rgba(61,43,26,0.15);
+    border:1.5px solid var(--blush);
+    display:flex;flex-direction:column;gap:16px;
+  ">
+    <div style="text-align:center">
+      <div style="font-size:10px;font-weight:700;color:var(--stamp);letter-spacing:.2em;margin-bottom:8px;">TEACHER PORTAL</div>
+      <h2 style="font-size:22px;font-weight:900;color:var(--ink);">선생님 관리 페이지</h2>
+      <p style="font-size:13px;color:var(--ink2);margin-top:4px;">로그인 코드를 입력하세요</p>
+    </div>
+    <input id="teacherCodeInput" type="text" placeholder="선생님 코드 (예: kim2024)"
+      style="
+        font-family:'Noto Sans KR',sans-serif;
+        font-size:15px;padding:13px 16px;
+        border:2px solid var(--blush);border-radius:10px;
+        background:#fff;color:var(--ink);outline:none;
+        transition:border-color .2s;
+      "
+      onfocus="this.style.borderColor='var(--warm)'"
+      onblur="this.style.borderColor='var(--blush)'"
+      onkeydown="if(event.key==='Enter')teacherLogin()"
+    >
+    <button class="btn btn-primary" style="padding:14px;font-size:15px;border-radius:10px;" onclick="teacherLogin()">로그인</button>
+    <div style="border-top:1px solid var(--blush);padding-top:14px;">
+      <p style="font-size:12px;color:var(--ink2);text-align:center;margin-bottom:10px;">처음 사용하시나요?</p>
+      <input id="teacherNameInput" type="text" placeholder="선생님 이름 (예: 김선생님)"
+        style="
+          font-family:'Noto Sans KR',sans-serif;
+          font-size:14px;padding:11px 14px;width:100%;
+          border:2px solid var(--blush);border-radius:10px;
+          background:#fff;color:var(--ink);outline:none;margin-bottom:8px;
+          box-sizing:border-box;transition:border-color .2s;
+        "
+        onfocus="this.style.borderColor='var(--warm)'"
+        onblur="this.style.borderColor='var(--blush)'"
+      >
+      <button class="btn btn-secondary" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="teacherRegister()">새 코드로 등록하기</button>
+    </div>
+    <button class="btn btn-secondary" style="font-size:12px;padding:9px;" onclick="showCover()">← 표지로</button>
+  </div>
+</div>
+
+<!-- ═══ TEACHER DASHBOARD ═══ -->
+<div id="view-teacher-dashboard" class="view">
+  <div style="width:100%;max-width:860px;padding:32px 24px 60px;box-sizing:border-box;">
+
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--stamp);letter-spacing:.15em;">TEACHER DASHBOARD</div>
+        <h2 id="teacherWelcome" style="font-size:22px;font-weight:900;color:var(--ink);"></h2>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" style="font-size:12px;padding:9px 16px;" onclick="refreshStudents()">🔄 새로고침</button>
+        <button class="btn btn-secondary" style="font-size:12px;padding:9px 16px;color:var(--stamp);border-color:var(--stamp);" onclick="teacherLogout()">로그아웃</button>
+      </div>
+    </div>
+
+    <!-- 수업 QR 카드 -->
+    <div style="
+      background:#fdf8f0;border-radius:14px;
+      border:1.5px solid var(--blush);
+      padding:24px 28px;margin-bottom:24px;
+      box-shadow:2px 3px 0 rgba(193,127,62,0.1);
+    ">
+      <div style="font-size:11px;font-weight:700;color:var(--warm);letter-spacing:.15em;margin-bottom:6px;">수업 입장 QR</div>
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:16px;">학생들이 이 QR을 스캔하면 표지 화면으로 바로 진입합니다.</p>
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+        <div id="classQrCanvas" style="
+          background:#fff;padding:10px;border-radius:8px;
+          border:1.5px solid var(--blush);flex-shrink:0;
+        "></div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:200px;">
+          <div id="classQrUrl" style="
+            font-size:11px;font-family:monospace;
+            background:rgba(193,127,62,0.08);border-radius:6px;
+            border:1px solid rgba(193,127,62,0.2);
+            padding:8px 10px;color:var(--ink2);word-break:break-all;
+          "></div>
+          <button class="btn btn-primary" style="font-size:13px;padding:11px;" onclick="downloadClassQR()">⬇ 수업 QR 저장</button>
+          <button class="btn btn-secondary" style="font-size:13px;padding:11px;" onclick="printClassQR()">🖨 수업 QR 인쇄</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 학생 목록 -->
+    <div style="
+      background:#fdf8f0;border-radius:14px;
+      border:1.5px solid var(--blush);
+      padding:24px 28px;
+      box-shadow:2px 3px 0 rgba(193,127,62,0.1);
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--warm);letter-spacing:.15em;">학생 목록</div>
+          <span id="studentCount" style="font-size:13px;color:var(--ink2);">0명</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" style="font-size:12px;padding:10px 16px;" onclick="printAllQR()">🖨 전체 QR 인쇄</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:10px 16px;color:var(--stamp);border-color:var(--stamp);" onclick="deleteAllStudents()">🗑 전체 삭제</button>
+        </div>
+      </div>
+      <div id="studentList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">
+        <div style="text-align:center;color:var(--ink2);font-size:13px;padding:32px;grid-column:1/-1;">
+          아직 제출한 학생이 없습니다
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 학생 이름 입력 모달 -->
+<div id="studentNameModal" style="
+  display:none;position:fixed;inset:0;
+  background:rgba(30,18,8,0.7);z-index:3000;
+  align-items:center;justify-content:center;padding:24px;
+">
+  <div style="
+    background:#fdf8f0;border-radius:16px;
+    padding:32px 28px;width:100%;max-width:360px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.25);
+    display:flex;flex-direction:column;gap:14px;
+  ">
+    <h3 style="font-size:18px;font-weight:900;color:var(--ink);text-align:center;">내 이름을 입력하세요</h3>
+    <p style="font-size:13px;color:var(--ink2);text-align:center;">선생님께 QR코드가 전달됩니다</p>
+    <input id="studentNameInput" type="text" placeholder="예: 홍길동"
+      style="
+        font-family:'Noto Sans KR',sans-serif;
+        font-size:16px;padding:13px 16px;
+        border:2px solid var(--blush);border-radius:10px;
+        background:#fff;color:var(--ink);outline:none;
+        box-sizing:border-box;
+      "
+      onfocus="this.style.borderColor='var(--warm)'"
+      onblur="this.style.borderColor='var(--blush)'"
+      onkeydown="if(event.key==='Enter')confirmStudentSubmit()"
+    >
+    <button class="btn btn-primary" style="padding:14px;font-size:15px;border-radius:10px;" onclick="confirmStudentSubmit()">QR 생성하기</button>
+    <button class="btn btn-secondary" style="padding:10px;font-size:13px;border-radius:10px;" onclick="closeStudentModal()">취소</button>
+  </div>
+</div>
+</body></html>'
       );
       showToast('이미지를 길게 눌러 저장하세요 📱');
     }
@@ -1097,6 +1263,502 @@ function showToast(msg){
 }
 
 route();
+
+/* ═══════════════════════════════════
+   선생님 / 학생 관리 시스템
+═══════════════════════════════════ */
+const WORKER = 'https://artbonbon-api.jsjeon-6d5.workers.dev';
+let currentTeacher = null; // { code, name }
+let pendingShareUrl = null; // 학생 QR 제출 대기 URL
+let classQrInstance = null;
+
+/* ── 선생님 로그인 ── */
+async function teacherLogin() {
+  const code = document.getElementById('teacherCodeInput').value.trim();
+  if (!code) { showToast('코드를 입력하세요'); return; }
+  showToast('로그인 중...');
+  try {
+    const res = await fetch(`${WORKER}/teacher/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || '로그인 실패'); return; }
+    currentTeacher = { code: data.code, name: data.name };
+    enterTeacherDashboard();
+  } catch(e) { showToast('서버 연결 실패'); }
+}
+
+/* ── 선생님 등록 ── */
+async function teacherRegister() {
+  const code = document.getElementById('teacherCodeInput').value.trim();
+  const name = document.getElementById('teacherNameInput').value.trim();
+  if (!code || !name) { showToast('코드와 이름을 모두 입력하세요'); return; }
+  if (code.length < 4) { showToast('코드는 4자 이상이어야 합니다'); return; }
+  showToast('등록 중...');
+  try {
+    const res = await fetch(`${WORKER}/teacher/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || '등록 실패'); return; }
+    currentTeacher = { code, name };
+    showToast(`${name} 선생님 등록 완료!`);
+    enterTeacherDashboard();
+  } catch(e) { showToast('서버 연결 실패'); }
+}
+
+/* ── 대시보드 진입 ── */
+function enterTeacherDashboard() {
+  setActive('view-teacher-dashboard');
+  document.getElementById('teacherWelcome').textContent = currentTeacher.name + ' 선생님 안녕하세요 👋';
+
+  // 수업 입장 QR 생성
+  const classUrl = location.origin + location.pathname + '?tc=' + currentTeacher.code;
+  document.getElementById('classQrUrl').textContent = classUrl;
+  const el = document.getElementById('classQrCanvas');
+  el.innerHTML = '';
+  classQrInstance = new QRCode(el, {
+    text: classUrl, width: 140, height: 140,
+    colorDark: '#3d2b1a', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  loadStudents();
+}
+
+/* ── 로그아웃 ── */
+function teacherLogout() {
+  currentTeacher = null;
+  document.getElementById('teacherCodeInput').value = '';
+  document.getElementById('teacherNameInput').value = '';
+  setActive('view-teacher-login');
+}
+
+/* ── 학생 목록 불러오기 ── */
+async function loadStudents() {
+  if (!currentTeacher) return;
+  try {
+    const res = await fetch(`${WORKER}/teacher/${currentTeacher.code}/students`, {
+      headers: { 'Authorization': `Bearer ${currentTeacher.code}` }
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error); return; }
+    renderStudents(data.students || []);
+  } catch(e) { showToast('목록 로드 실패'); }
+}
+
+function refreshStudents() {
+  showToast('새로고침 중...');
+  loadStudents();
+}
+
+/* ── 학생 목록 렌더링 ── */
+function renderStudents(students) {
+  const list = document.getElementById('studentList');
+  document.getElementById('studentCount').textContent = students.length + '명';
+
+  if (students.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--ink2);font-size:13px;padding:32px;grid-column:1/-1;">아직 제출한 학생이 없습니다</div>';
+    return;
+  }
+
+  list.innerHTML = students.map(s => `
+    <div style="
+      background:#fff;border-radius:12px;
+      border:1.5px solid var(--blush);
+      padding:16px 14px;
+      display:flex;flex-direction:column;align-items:center;gap:10px;
+      position:relative;
+    ">
+      <button onclick="deleteStudent('${s.id}')" style="
+        position:absolute;top:8px;right:8px;
+        font-size:14px;background:none;border:none;
+        color:rgba(184,92,56,0.5);cursor:pointer;padding:2px 6px;
+      ">✕</button>
+      <div id="sq_${s.id}" style="background:#fff;padding:6px;border-radius:6px;border:1px solid var(--blush);"></div>
+      <div style="font-size:13px;font-weight:700;color:var(--ink);text-align:center;">${s.name}</div>
+      <div style="font-size:10px;color:var(--ink2);">${new Date(s.createdAt).toLocaleDateString('ko-KR')}</div>
+    </div>
+  `).join('');
+
+  // 각 학생 QR 생성
+  students.forEach(s => {
+    const el = document.getElementById('sq_' + s.id);
+    if (el) {
+      new QRCode(el, {
+        text: s.shareUrl, width: 120, height: 120,
+        colorDark: '#3d2b1a', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  });
+}
+
+/* ── 학생 삭제 ── */
+async function deleteStudent(id) {
+  if (!confirm('이 학생을 삭제할까요?')) return;
+  try {
+    await fetch(`${WORKER}/teacher/${currentTeacher.code}/student/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${currentTeacher.code}` }
+    });
+    showToast('삭제 완료');
+    loadStudents();
+  } catch(e) { showToast('삭제 실패'); }
+}
+
+/* ── 전체 삭제 ── */
+async function deleteAllStudents() {
+  if (!confirm('모든 학생 데이터를 삭제할까요?')) return;
+  try {
+    await fetch(`${WORKER}/teacher/${currentTeacher.code}/students`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${currentTeacher.code}` }
+    });
+    showToast('전체 삭제 완료');
+    loadStudents();
+  } catch(e) { showToast('삭제 실패'); }
+}
+
+/* ── 수업 QR 저장 ── */
+function downloadClassQR() {
+  const canvas = document.querySelector('#classQrCanvas canvas');
+  if (!canvas) return;
+  const url = document.getElementById('classQrUrl').textContent;
+  const out = document.createElement('canvas');
+  out.width = 200; out.height = 240;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#fdf8f0'; ctx.fillRect(0, 0, 200, 240);
+  ctx.drawImage(canvas, 30, 14, 140, 140);
+  ctx.fillStyle = '#3d2b1a'; ctx.font = 'bold 12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('아트봉봉스쿨 행운 액자', 100, 174);
+  ctx.font = '10px sans-serif'; ctx.fillStyle = '#6b4a30';
+  ctx.fillText('QR을 스캔해서 시작하세요!', 100, 192);
+  const a = document.createElement('a');
+  a.href = out.toDataURL('image/png');
+  a.download = '수업입장_QR.png'; a.click();
+  showToast('QR 저장 완료!');
+}
+
+/* ── 수업 QR 인쇄 ── */
+function printClassQR() {
+  const canvas = document.querySelector('#classQrCanvas canvas');
+  if (!canvas) return;
+  const url = document.getElementById('classQrUrl').textContent;
+  openPrintWindow([{ name: '수업 입장 QR', qrDataUrl: canvas.toDataURL(), url }], '수업 입장 QR');
+}
+
+/* ── 전체 학생 QR 인쇄 ── */
+async function printAllQR() {
+  const cards = document.querySelectorAll('#studentList [id^="sq_"]');
+  if (!cards.length) { showToast('학생이 없습니다'); return; }
+  showToast('인쇄 준비 중...');
+
+  // 잠깐 기다려서 QR이 다 그려지도록
+  await new Promise(r => setTimeout(r, 300));
+
+  const items = [];
+  document.querySelectorAll('#studentList > div').forEach(card => {
+    const nameEl = card.querySelector('div[style*="font-weight:700"]');
+    const qrCanvas = card.querySelector('canvas');
+    if (nameEl && qrCanvas) {
+      items.push({ name: nameEl.textContent.trim(), qrDataUrl: qrCanvas.toDataURL() });
+    }
+  });
+
+  if (!items.length) { showToast('QR이 아직 생성되지 않았습니다. 잠시 후 다시 시도하세요.'); return; }
+  openPrintWindow(items, '학생 QR 전체 인쇄');
+}
+
+/* ── 공통 인쇄 창 ── */
+function openPrintWindow(items, title) {
+  const w = window.open('', '_blank');
+  const cards = items.map(item => `
+    <div class="qr-card">
+      <img src="${item.qrDataUrl}" alt="QR">
+      <div class="name">${item.name}</div>
+      <div class="hint">📱 스캔해서 확인하세요</div>
+    </div>
+  `).join('');
+
+  w.document.write(`
+    <!DOCTYPE html><html><head>
+    <meta charset="UTF-8"><title>${title}</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { font-family:'Noto Sans KR',sans-serif; background:#fff; padding:16px; }
+      h1 { font-size:16px; font-weight:900; color:#3d2b1a; text-align:center; margin-bottom:16px; }
+      .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+      .qr-card {
+        border:1.5px solid #d4a96a; border-radius:12px;
+        padding:16px 12px; text-align:center;
+        background:#fdf8f0; break-inside:avoid;
+      }
+      .qr-card img { width:120px; height:120px; }
+      .name { font-size:14px; font-weight:700; color:#3d2b1a; margin-top:8px; }
+      .hint { font-size:10px; color:#6b4a30; margin-top:4px; }
+      @media print {
+        body { padding:8px; }
+        .grid { gap:8px; }
+      }
+    </style>
+    </head><body>
+    <h1>🎨 아트봉봉스쿨 디지털 행운 액자 — ${title}</h1>
+    <div class="grid">${cards}</div>
+    <script>window.onload=()=>{ setTimeout(()=>window.print(), 400); }<\/script>
+    </body></html>
+  `);
+  w.document.close();
+}
+
+/* ── 학생: QR 제출 모달 ── */
+function openStudentModal() {
+  if (!imgDataUrl) { showToast('이미지를 먼저 업로드하세요'); return; }
+  // 선생님 코드가 URL에 있으면 자동 연결
+  const tc = new URLSearchParams(location.search).get('tc');
+  if (!tc) {
+    showToast('선생님 QR로 접속하지 않으면 QR 제출이 안됩니다');
+    // 그냥 링크만 생성
+    generateLinkOnly();
+    return;
+  }
+  pendingShareUrl = null;
+  document.getElementById('studentNameInput').value = '';
+  document.getElementById('studentNameModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('studentNameInput').focus(), 100);
+}
+
+function closeStudentModal() {
+  document.getElementById('studentNameModal').style.display = 'none';
+}
+
+async function confirmStudentSubmit() {
+  const name = document.getElementById('studentNameInput').value.trim();
+  if (!name) { showToast('이름을 입력하세요'); return; }
+  const tc = new URLSearchParams(location.search).get('tc');
+  closeStudentModal();
+  showToast('QR 생성 중...');
+
+  // 먼저 이미지 업로드해서 링크 생성
+  await generateLinkOnly(async (url) => {
+    try {
+      const res = await fetch(`${WORKER}/student/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacherCode: tc, studentName: name, shareUrl: url })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`${name} 학생 QR이 선생님께 전달됐어요! 🎉`);
+      } else {
+        showToast(data.error || '제출 실패');
+      }
+    } catch(e) { showToast('서버 연결 실패'); }
+  });
+}
+
+/* ── 링크만 생성 (QR 없이) ── */
+async function generateLinkOnly(callback) {
+  if (!imgDataUrl) { showToast('이미지를 먼저 업로드하세요'); return; }
+  showToast('링크 생성 중...');
+
+  const MAX = 800;
+  const img = new Image();
+  img.onload = async () => {
+    let cw = img.width, ch = img.height;
+    const s = Math.min(MAX/cw, MAX/ch, 1);
+    cw = Math.round(cw*s); ch = Math.round(ch*s);
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+    const compressed = cv.toDataURL('image/jpeg', 0.7);
+    try {
+      const res = await fetch(`${WORKER}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: compressed })
+      });
+      const json = await res.json();
+      if (!json.id) throw new Error('ID 없음');
+      const url = location.origin + location.pathname + '#id=' + json.id;
+
+      // shareBox 표시 + QR
+      document.getElementById('shareUrl').textContent = url;
+      const box = document.getElementById('shareBox');
+      box.style.display = 'block';
+      generateQR(url);
+      showToast('QR 생성 완료! ✓');
+
+      if (callback) await callback(url);
+    } catch(e) {
+      showToast('업로드 실패');
+    }
+  };
+  img.src = imgDataUrl;
+}
+
+/* ── URL에 선생님 코드가 있으면 자동 처리 ── */
+(function checkTeacherCode() {
+  const tc = new URLSearchParams(location.search).get('tc');
+  if (tc) {
+    // 학생 모드: 선생님 코드 저장
+    sessionStorage.setItem('teacherCode', tc);
+  }
+})();
+
 </script>
+
+<!-- ═══ TEACHER LOGIN ═══ -->
+<div id="view-teacher-login" class="view">
+  <div style="
+    width:100%;max-width:420px;
+    background:#fdf8f0;border-radius:16px;
+    padding:40px 36px;margin:auto;
+    box-shadow:4px 5px 20px rgba(61,43,26,0.15);
+    border:1.5px solid var(--blush);
+    display:flex;flex-direction:column;gap:16px;
+  ">
+    <div style="text-align:center">
+      <div style="font-size:10px;font-weight:700;color:var(--stamp);letter-spacing:.2em;margin-bottom:8px;">TEACHER PORTAL</div>
+      <h2 style="font-size:22px;font-weight:900;color:var(--ink);">선생님 관리 페이지</h2>
+      <p style="font-size:13px;color:var(--ink2);margin-top:4px;">로그인 코드를 입력하세요</p>
+    </div>
+    <input id="teacherCodeInput" type="text" placeholder="선생님 코드 (예: kim2024)"
+      style="
+        font-family:'Noto Sans KR',sans-serif;
+        font-size:15px;padding:13px 16px;
+        border:2px solid var(--blush);border-radius:10px;
+        background:#fff;color:var(--ink);outline:none;
+        transition:border-color .2s;
+      "
+      onfocus="this.style.borderColor='var(--warm)'"
+      onblur="this.style.borderColor='var(--blush)'"
+      onkeydown="if(event.key==='Enter')teacherLogin()"
+    >
+    <button class="btn btn-primary" style="padding:14px;font-size:15px;border-radius:10px;" onclick="teacherLogin()">로그인</button>
+    <div style="border-top:1px solid var(--blush);padding-top:14px;">
+      <p style="font-size:12px;color:var(--ink2);text-align:center;margin-bottom:10px;">처음 사용하시나요?</p>
+      <input id="teacherNameInput" type="text" placeholder="선생님 이름 (예: 김선생님)"
+        style="
+          font-family:'Noto Sans KR',sans-serif;
+          font-size:14px;padding:11px 14px;width:100%;
+          border:2px solid var(--blush);border-radius:10px;
+          background:#fff;color:var(--ink);outline:none;margin-bottom:8px;
+          box-sizing:border-box;transition:border-color .2s;
+        "
+        onfocus="this.style.borderColor='var(--warm)'"
+        onblur="this.style.borderColor='var(--blush)'"
+      >
+      <button class="btn btn-secondary" style="width:100%;padding:12px;font-size:14px;border-radius:10px;" onclick="teacherRegister()">새 코드로 등록하기</button>
+    </div>
+    <button class="btn btn-secondary" style="font-size:12px;padding:9px;" onclick="showCover()">← 표지로</button>
+  </div>
+</div>
+
+<!-- ═══ TEACHER DASHBOARD ═══ -->
+<div id="view-teacher-dashboard" class="view">
+  <div style="width:100%;max-width:860px;padding:32px 24px 60px;box-sizing:border-box;">
+
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--stamp);letter-spacing:.15em;">TEACHER DASHBOARD</div>
+        <h2 id="teacherWelcome" style="font-size:22px;font-weight:900;color:var(--ink);"></h2>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" style="font-size:12px;padding:9px 16px;" onclick="refreshStudents()">🔄 새로고침</button>
+        <button class="btn btn-secondary" style="font-size:12px;padding:9px 16px;color:var(--stamp);border-color:var(--stamp);" onclick="teacherLogout()">로그아웃</button>
+      </div>
+    </div>
+
+    <!-- 수업 QR 카드 -->
+    <div style="
+      background:#fdf8f0;border-radius:14px;
+      border:1.5px solid var(--blush);
+      padding:24px 28px;margin-bottom:24px;
+      box-shadow:2px 3px 0 rgba(193,127,62,0.1);
+    ">
+      <div style="font-size:11px;font-weight:700;color:var(--warm);letter-spacing:.15em;margin-bottom:6px;">수업 입장 QR</div>
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:16px;">학생들이 이 QR을 스캔하면 표지 화면으로 바로 진입합니다.</p>
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+        <div id="classQrCanvas" style="
+          background:#fff;padding:10px;border-radius:8px;
+          border:1.5px solid var(--blush);flex-shrink:0;
+        "></div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:200px;">
+          <div id="classQrUrl" style="
+            font-size:11px;font-family:monospace;
+            background:rgba(193,127,62,0.08);border-radius:6px;
+            border:1px solid rgba(193,127,62,0.2);
+            padding:8px 10px;color:var(--ink2);word-break:break-all;
+          "></div>
+          <button class="btn btn-primary" style="font-size:13px;padding:11px;" onclick="downloadClassQR()">⬇ 수업 QR 저장</button>
+          <button class="btn btn-secondary" style="font-size:13px;padding:11px;" onclick="printClassQR()">🖨 수업 QR 인쇄</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 학생 목록 -->
+    <div style="
+      background:#fdf8f0;border-radius:14px;
+      border:1.5px solid var(--blush);
+      padding:24px 28px;
+      box-shadow:2px 3px 0 rgba(193,127,62,0.1);
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--warm);letter-spacing:.15em;">학생 목록</div>
+          <span id="studentCount" style="font-size:13px;color:var(--ink2);">0명</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" style="font-size:12px;padding:10px 16px;" onclick="printAllQR()">🖨 전체 QR 인쇄</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:10px 16px;color:var(--stamp);border-color:var(--stamp);" onclick="deleteAllStudents()">🗑 전체 삭제</button>
+        </div>
+      </div>
+      <div id="studentList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">
+        <div style="text-align:center;color:var(--ink2);font-size:13px;padding:32px;grid-column:1/-1;">
+          아직 제출한 학생이 없습니다
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 학생 이름 입력 모달 -->
+<div id="studentNameModal" style="
+  display:none;position:fixed;inset:0;
+  background:rgba(30,18,8,0.7);z-index:3000;
+  align-items:center;justify-content:center;padding:24px;
+">
+  <div style="
+    background:#fdf8f0;border-radius:16px;
+    padding:32px 28px;width:100%;max-width:360px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.25);
+    display:flex;flex-direction:column;gap:14px;
+  ">
+    <h3 style="font-size:18px;font-weight:900;color:var(--ink);text-align:center;">내 이름을 입력하세요</h3>
+    <p style="font-size:13px;color:var(--ink2);text-align:center;">선생님께 QR코드가 전달됩니다</p>
+    <input id="studentNameInput" type="text" placeholder="예: 홍길동"
+      style="
+        font-family:'Noto Sans KR',sans-serif;
+        font-size:16px;padding:13px 16px;
+        border:2px solid var(--blush);border-radius:10px;
+        background:#fff;color:var(--ink);outline:none;
+        box-sizing:border-box;
+      "
+      onfocus="this.style.borderColor='var(--warm)'"
+      onblur="this.style.borderColor='var(--blush)'"
+      onkeydown="if(event.key==='Enter')confirmStudentSubmit()"
+    >
+    <button class="btn btn-primary" style="padding:14px;font-size:15px;border-radius:10px;" onclick="confirmStudentSubmit()">QR 생성하기</button>
+    <button class="btn btn-secondary" style="padding:10px;font-size:13px;border-radius:10px;" onclick="closeStudentModal()">취소</button>
+  </div>
+</div>
 </body>
 </html>
